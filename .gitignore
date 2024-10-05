@@ -33,3 +33,4 @@ wheels/
 *.egg
 
 .DS_Store
+kafka_2.13-3.8.0/logs/
