@@ -18,3 +18,6 @@
 
 ## Adding new packages
 Simply run `pip install package` and update the requirements with `pip freeze > requirements.txt`
+
+## To run server
+With the environment activated, run `uvicorn main:app --reload`
