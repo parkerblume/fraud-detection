@@ -20,6 +20,9 @@ const contractJson = JSON.parse(
 );
 const contractAbi = contractJson.abi;
 
+function stringToBytes32(str) {
+  return ethers.utils.formatBytes32String(str);
+}
 
 // Connect to local network
 const provider = new ethers.providers.JsonRpcProvider(NETWORK_URL);
@@ -100,8 +103,11 @@ app.post('/record-transaction', async (req, res) => {
       { $set: { riskScore: riskScore } }
     );
 
+    // Convert companyId to bytes32
+    const companyIdBytes32 = stringToBytes32(companyId);
+
     // Record transaction on blockchain
-    const tx = await contract.recordTransaction(`0x${dataHash}`, isFraudulent);
+    const tx = await contract.recordTransaction(`0x${dataHash}`, isFraudulent, companyIdBytes32);
     await tx.wait();
 
     res.status(200).send({ success: true, txHash: tx.hash });
