@@ -14,7 +14,7 @@ def load_company_list():
     global COMPANY_LIST_PATH
     name_mapping = {}
 
-    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
     COMPANY_LIST_PATH = os.path.join(project_root, 'data', 'combined_comp_database.csv')
     
     if os.path.exists(COMPANY_LIST_PATH):

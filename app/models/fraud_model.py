@@ -5,9 +5,14 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report, roc_auc_score
 from imblearn.over_sampling import SMOTE
-import importlib
-utils = importlib.import_module('utils.api')
-check_company_legitimacy = utils.check_company_legitimacy
+import sys
+import os
+from pathlib import Path
+
+project_root = Path(__file__).resolve().parent.parent.parent
+sys.path.append(str(project_root))
+from app.utils.api import check_company_legitimacy
+
 
 def process_data(data, user_details):
     '''
@@ -58,7 +63,7 @@ def process_data(data, user_details):
 
     return X, y, usual_hour, hour_tolerance, usual_locs, amount_stats
 
-def predict_fraud_probability(transaction, user_details, usual_hour, hour_tolerance, usual_locations, amount_stats):
+def predict_fraud_probability(transaction, X, model, scaler, user_details, usual_hour, hour_tolerance, usual_locations, amount_stats):
     
     # Grab the features out of the test transaction
     transaction['DateTime'] = pd.to_datetime(transaction['DateTime'], format='%Y-%m-%d %H:%M:%S')
@@ -209,71 +214,64 @@ def adjust_prob_by_risks(probability, credit_risk, age_risk):
     # Ensure probability stays within [0, 1]
     return max(0, min(1, adjusted_probability))
 
-# Test User Details (remove later)
-user_details = {
-    'Name': 'John Doe',
-    'credit_score': 650,
-    'age': 70
-}
-
 # Read in our data, and process it
-data = pd.read_csv('transactions_credit.csv')
-X, y, usual_hour, hour_tolerance, usual_locations, amount_stats = process_data(data, user_details)
-model, scaler, X_test_scaled, y_test = train_model(X, y)
+# data = pd.read_csv('transactions_credit.csv')
+# X, y, usual_hour, hour_tolerance, usual_locations, amount_stats = process_data(data, user_details)
+# model, scaler, X_test_scaled, y_test = train_model(X, y)
 
 # Test Model
-y_pred, y_pred_proba, roc_auc, feature_importances = test_model(model, X_test_scaled, y_test, X.columns)
+# y_pred, y_pred_proba, roc_auc, feature_importances = test_model(model, X_test_scaled, y_test, X.columns)
 
 
 # y_pred = model.predict(X_test_scaled)
 # y_pred_proba = model.predict_proba(X_test_scaled)[:, 1]
 
-print("\nClassification Report:")
-print(classification_report(y_test, y_pred))
-print(f"ROC AUC Score: {roc_auc_score(y_test, y_pred_proba):.4f}")
+# print("\nClassification Report:")
+# print(classification_report(y_test, y_pred))
+# print(f"ROC AUC Score: {roc_auc_score(y_test, y_pred_proba):.4f}")
+# 
+# # Print feature importances
+# feature_importances = pd.DataFrame({'feature': X.columns, 'importance': model.feature_importances_})
+# feature_importances = feature_importances.sort_values('importance', ascending=False)
+# print("\nTop 10 Most Important Features:")
+# print(feature_importances.head(20))
 
-# Print feature importances
-feature_importances = pd.DataFrame({'feature': X.columns, 'importance': model.feature_importances_})
-feature_importances = feature_importances.sort_values('importance', ascending=False)
-print("\nTop 10 Most Important Features:")
-print(feature_importances.head(20))
-
-test_transaction = {
-    'DateTime': '2024-7-12 22:30:00',
-    'Name': 'Wawa',
-    'Amount': 12,
-    'Location': 'Atlanta GA'
-}
-
-test_transaction2 = {
-    'DateTime': '2024-7-12 18:30:00',
-    'Name': 'ChairMan',
-    'Amount': 200,
-    'Location': 'Orlando FL'
-}
-
-test_transaction3 = {
-    'DateTime': '2024-7-12 04:30:00',
-    'Name': 'Lexus',
-    'Amount': 1000000,
-    'Location': 'Orlando FL'
-}
-
-test_transaction4 = {
-    'DateTime': '2024-7-12 16:30:00',
-    'Name': 'Wawa',
-    'Amount': 40,
-    'Location': 'Orlando FL'
-}
-
-fraud_prob = predict_fraud_probability(test_transaction, user_details, usual_hour, hour_tolerance, usual_locations, amount_stats)
-print(f"Probability of fraud for the new transaction: {fraud_prob:.4f}\n")
-
-fraud_prob = predict_fraud_probability(test_transaction2, user_details, usual_hour, hour_tolerance, usual_locations, amount_stats)
-print(f"Probability of fraud for the new transaction: {fraud_prob:.4f} \n")
-
-fraud_prob = predict_fraud_probability(test_transaction3, user_details, usual_hour, hour_tolerance, usual_locations, amount_stats)
-print(f"Probability of fraud for the new transaction: {fraud_prob:.4f}\n")
-
-fraud_prob = predict_fraud_probability(test_transaction4, user_details, usual_hour, hour_tolerance, usual_locations, amount_stats)
-print(f"Probability of fraud for the new transaction: {fraud_prob:.4f}\n")
+# test_transaction = {
+#     'DateTime': '2024-7-12 22:30:00',
+#     'Name': 'Wawa',
+#     'Amount': 12,
+#     'Location': 'Atlanta GA'
+# }
+# 
+# test_transaction2 = {
+#     'DateTime': '2024-7-12 18:30:00',
+#     'Name': 'ChairMan',
+#     'Amount': 200,
+#     'Location': 'Orlando FL'
+# }
+# 
+# test_transaction3 = {
+#     'DateTime': '2024-7-12 04:30:00',
+#     'Name': 'Lexus',
+#     'Amount': 1000000,
+#     'Location': 'Orlando FL'
+# }
+# 
+# test_transaction4 = {
+#     'DateTime': '2024-7-12 16:30:00',
+#     'Name': 'Wawa',
+#     'Amount': 40,
+#     'Location': 'Orlando FL'
+# }
+# 
+# fraud_prob = predict_fraud_probability(test_transaction, user_details, usual_hour, hour_tolerance, usual_locations, amount_stats)
+# print(f"Probability of fraud for the new transaction: {fraud_prob:.4f}\n")
+# 
+# fraud_prob = predict_fraud_probability(test_transaction2, user_details, usual_hour, hour_tolerance, usual_locations, amount_stats)
+# print(f"Probability of fraud for the new transaction: {fraud_prob:.4f} \n")
+# 
+# fraud_prob = predict_fraud_probability(test_transaction3, user_details, usual_hour, hour_tolerance, usual_locations, amount_stats)
+# print(f"Probability of fraud for the new transaction: {fraud_prob:.4f}\n")
+# 
+# fraud_prob = predict_fraud_probability(test_transaction4, user_details, usual_hour, hour_tolerance, usual_locations, amount_stats)
+# print(f"Probability of fraud for the new transaction: {fraud_prob:.4f}\n")
