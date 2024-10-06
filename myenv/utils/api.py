@@ -112,9 +112,8 @@ def check_company_legitimacy(company_name):
 
             # strip response of any whitespace or newlines
             answer = response.choices[0].message.content.strip()
-            print(answer)
+
             if answer == "Yes":
-                print("ChatGPT says: ", answer)
                 COMPANY_LIST.append(name_upper) # append to dataset
                 with open(COMPANY_LIST_PATH, 'a', newline='', encoding='utf-8') as csvfile:
                     print("Writing to cvs file")
