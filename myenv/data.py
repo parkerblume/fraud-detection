@@ -2,11 +2,11 @@ import random
 from datetime import timedelta
 import pandas as pd
 
-credit_score = 610
+credit_score = 710
+age = 42
 
 def fraud_purchase(current_date, balance):
-    location_zip = [
-        'Pyongyang NK',
+    location = [
         'Los Angeles CA',
         'New York NY',
         'London EN',
@@ -19,29 +19,24 @@ def fraud_purchase(current_date, balance):
         'Groton CT'
     ]
 
-    random_location = random.choice(location_zip)
+    random_location = random.choice(location)
 
     names = [
         'Paypal',
-        'Accelerators',
-        'Monster Energy',
-        'Fat Joe',
-        'Skinny Joe',
-        'Fraud',
-        'Servicenow',
-        'IBM',
-        'Magic the Gathering',
-        'Pawn Stars',
-        'Lockheed Martin',
-        'Impractical Jokers'
+        'Online',
+        'Valley',
+        'Unknown',
+        'User',
+        'ComputerPart',
+        'Free Bitcoin'
     ]
 
     random_name = random.choice(names)
 
-    hour = random.randint(0, 23)
+    hour = random.randint(0, 5)
     minute = random.randint(0, 59)
     time = f"{hour:02d}:{minute:02d}:00"
-    amount = round(-random.uniform(100, 3000), 2)
+    amount = round(-random.uniform(100, 1800), 2)
 
     return {
         "Date": current_date.date(),
@@ -64,13 +59,13 @@ def random_purchase(current_date, balance, weights):
     zip_code = location_zip[random_location]
 
     categories = {
-        "Shopping": ["Amazon", "Target", "Best Buy", "Walmart", "Michael's", "Home Depot", "Petco"],
+        "Shopping": ["Amazon", "Target", "Best Buy", "Walmart", "Home Depot", "Petco"],
         "Groceries": ["Kroger", "Publix", "Trader Joe's", "Whole Foods", "Lowes Foods"],
-        "Food": ["McDonald's", "Starbucks", "Burger King", "Subway", "Scooter's", "Panera", "Smoothie King", "Panda Express", "Qdoba"],
+        "Food": ["McDonald's", "Starbucks", "Subway", "Panera", "Smoothie King", "Qdoba"],
         "Gas": ["Shell", "BP", "Chevron", "Exxon", "7-Eleven", "Racetrac", "Wawa"],
-        "Car Expense": ["AutoZone", "Jiffy Lube", "Midas", "Pep Boys", "Take5", "Valvoline"],
-        "Entertainment": ["Movie Theater", "Concert Tickets", "Disney World", "Netflix", "Movie Rental"],
-        "Miscellaneous": ["Walgreens", "CVS", "Dollar Tree", "Five Below", "Gamestop", "WOTC"]
+        "Car Expense": ["AutoZone", "Midas", "Pep Boys", "Take5", "Valvoline"],
+        "Entertainment": ["Movie Theater", "Concert Tickets", "Disney World", "Movie Rental"],
+        "Miscellaneous": ["Walgreens", "CVS", "Dollar Tree", "Five Below", "Gamestop"]
     }
 
     # Pick a random category based on weights
@@ -78,36 +73,48 @@ def random_purchase(current_date, balance, weights):
     name = random.choice(categories[category])
     
     # Assign a spending range based on the category
-    # Randomness could be modified depending on credit score, age, and location
-    if category == "Shopping":
-        amount = round(-random.uniform(10, 150), 2)
-    elif category == "Groceries":
-        amount = round(-random.uniform(30, 100), 2)
-    elif category == "Food":
-        amount = round(-random.uniform(5, 40), 2)
-    elif category == "Gas":
-        amount = round(-random.uniform(10, 30), 2)
-    elif category == "Car Expense":
-        amount = round(-random.uniform(40, 200), 2)
-    elif category == "Entertainment":
-        amount = round(-random.uniform(10, 60), 2)
-    else:  # Miscellaneous
-        amount = round(-random.uniform(5, 50), 2)
+    match category:
+        case "Shopping":
+            amount = round(-random.uniform(10, 150), 2)
+        case "Groceries":
+            amount = round(-random.uniform(30, 100), 2)
+        case "Food":
+            amount = round(-random.uniform(5, 40), 2)
+        case "Gas":
+            amount = round(-random.uniform(10, 30), 2)
+        case "Car Expense":
+            amount = round(-random.uniform(40, 200), 2)
+        case "Entertainment":
+            amount = round(-random.uniform(10, 60), 2)
+        case _:
+            amount = round(-random.uniform(5, 50), 2)
+
+    # Modify spending amounts based on credit score and balance
+    credit_mod = 800 / credit_score
+    balance_mod = 1
+
     if balance > 6000:
-        amount = round(amount * 1.5 * (800 / credit_score), 2)
+        balance_mod = 1.5
     elif balance > 8000:
-        amount = round(amount * 2.5 * (800 / credit_score), 2)
+        balance_mod = 2
     elif balance > 10000:
-        amount = round(amount * 3.5 * (800 / credit_score), 2)
+        balance_mod = 2.5
     elif balance > 12000:
-        amount = round(amount * 5.5 * (800 / credit_score), 2)
+        balance_mod = 3
+
+    amount = round(amount * balance_mod * credit_mod, 2)
     balance = round(balance + amount, 2)
     
-    # Generate a random time between 9am and 11pm
-    if credit_score < 650:
-        hour = random.randint(round(9 - 800 / credit_score), round(20 + 800 / credit_score))
-    else:
-        hour = random.randint(round(10 + credit_score / 800), round(18 - credit_score / 800))
+    # Choose spending hours for a particular user
+    hours_start = age % 24
+    hours_end = (age + 6) % 24
+
+    if hours_start > hours_end:
+        hours_temp = hours_start
+        hours_start = hours_end
+        hours_end = hours_temp
+
+    hour = random.randint(hours_start, hours_end)
     minute = random.randint(0, 59)
     time = f"{hour:02d}:{minute:02d}:00"
 
@@ -122,7 +129,6 @@ def random_purchase(current_date, balance, weights):
     }, balance
 
 def generate_transactions(num_entries=100, weights=None):
-    # weights can be modified based on credit score, age, income, and location
     if weights is None:
         weights = {
             "Shopping": 1.5,
@@ -145,22 +151,27 @@ def generate_transactions(num_entries=100, weights=None):
         "Fraud": []
     }
     
-    balance = 2000.00
-    paycheck_amount = 2000.00
+    # Get car and rent costs based on age, credit, and income
+    balance = 3745.87
+    paycheck_amount = 3000.00
+    car = round((-paycheck_amount / 12) * (800 / credit_score), 2)
+    rent = round((-paycheck_amount / 2) * (40 / age), 2)
+
     recurring_bills = {
-        "Car": -300.00,
-        "Rent": -960.00,
-        "Spotify": -11.99,
-        "Insurance": -197.46,
-        "Internet": -70.89,
-        "ChatGPT Plus": -20.00
+        "Car": car,
+        "Rent": rent,
+        "Spotify": -12,
+        "Insurance": -200,
+        "Utilities": round(rent / 10, 2),
+        "Internet": -70,
+        "Streaming": round(-25 * (40 / age), 2),
     }
 
     # Dates for recurring bills
-    day_1_bills = ["Rent", "Insurance", "Car"]
-    day_7_bills = ["Spotify", "Internet", "ChatGPT Plus"]
+    day_1_bills = ["Rent", "Insurance", "Car", "Utilities"]
+    day_7_bills = ["Spotify", "Internet", "Streaming"]
 
-    current_date = pd.to_datetime("2024-01-01")
+    current_date = pd.to_datetime("2012-01-01")
     paycheck_date = current_date
 
     while len(data["Date"]) < num_entries:
@@ -205,22 +216,10 @@ def generate_transactions(num_entries=100, weights=None):
                 data["Balance"].append(balance)
                 data["Fraud"].append(0)
 
-        # Add a random purchase 0-3 times per day
-        num_rand = random.randint(0, 3)
-
+        # Add a number of random purchases each day
+        num_rand = random.randint(0, 5)
         i = 0
         while i < num_rand:
-            if random.randint(1, 10) == 1:
-                fraud_transaction, balance = fraud_purchase(current_date, balance)
-                data["Date"].append(fraud_transaction["Date"])
-                data["Time"].append(fraud_transaction["Time"])
-                data["Name"].append(fraud_transaction["Name"])
-                data["Amount"].append(fraud_transaction["Amount"])
-                data["Location"].append(fraud_transaction["Location"])
-                data["Zip"].append(fraud_transaction["Zip"])
-                data["Balance"].append(fraud_transaction["Balance"])
-                data["Fraud"].append(1)
-
             random_transaction, balance = random_purchase(current_date, balance, weights)
             data["Date"].append(random_transaction["Date"])
             data["Time"].append(random_transaction["Time"])
@@ -231,6 +230,8 @@ def generate_transactions(num_entries=100, weights=None):
             data["Balance"].append(random_transaction["Balance"])
             data["Fraud"].append(0)
             i = i + 1
+
+        # Insert fraud transactions randomly
         if random.randint(1, 10) == 1:
             fraud_transaction, balance = fraud_purchase(current_date, balance)
             data["Date"].append(fraud_transaction["Date"])
@@ -245,7 +246,7 @@ def generate_transactions(num_entries=100, weights=None):
 
     return pd.DataFrame(data)
 
-result = generate_transactions(num_entries=10000)
+result = generate_transactions(num_entries=1000)
 
 output_file = 'transactions.csv'
 result.to_csv(output_file, index=False)
