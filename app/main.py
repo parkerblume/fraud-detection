@@ -78,6 +78,8 @@ async def train_model_endpoint(file: UploadFile = File(None)):
 async def predict(transaction: Transaction):
     global model, scaler, usual_hour, hour_tolerance, usual_locations, amount_stats, transaction_counter
     
+    print(transaction)
+
     if model is None:
         raise HTTPException(status_code=400, detail="Model not trained. Please train the model first.")
     
@@ -105,7 +107,7 @@ async def predict(transaction: Transaction):
             "Content-Type": "application/json"
         }
     )
-
+     
     if response.status_code == 200:
         print("It's public on the blockchain!")
         print("Response:", response.json())

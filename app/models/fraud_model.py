@@ -152,7 +152,7 @@ def train_model(X, y):
     print(pd.Series(y_train_resampled).value_counts(normalize=True))
 
     # Fit the model to the data, n_estimators is the number of trees, making a class prediction independenlty
-    model = RandomForestClassifier(n_estimators=100, min_samples_leaf=5, max_depth=3, class_weight="balanced_subsample", random_state=42)
+    model = RandomForestClassifier(n_estimators=100, min_samples_leaf=5, max_depth=5, class_weight="balanced_subsample", random_state=42)
     model.fit(X_train_resampled, y_train_resampled)
 
     return model, scaler, X_test_scaled, y_test
