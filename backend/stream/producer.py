@@ -1,8 +1,9 @@
 from confluent_kafka import Producer
 import pandas as pd
+import random
 import time
 
-data_dir = 'myenv/data/'
+data_dir = 'data/'
 
 # Kafka configuration
 kafka_config = {
@@ -13,7 +14,7 @@ def kafka_producer(file):
     producer = Producer(kafka_config)
     
     # Read the CSV file
-    transactions_df = pd.read_csv(file, delimiter='\t')
+    transactions_df = pd.read_csv(file)
     
     # Optional: Check if CSV loaded properly
     print("CSV Loaded: \n", transactions_df.head())
@@ -29,10 +30,13 @@ def kafka_producer(file):
         message = transaction.to_json().encode('utf-8')  # Convert row to JSON string and encode to bytes
         producer.produce('transactions', value=message, callback=delivery_report)
         producer.poll(0)  # Ensure messages are sent immediately
-        time.sleep(0.1)  # Optional: Simulate delay between messages
+        
+        # Generate a random interval between 0.5 and 2.0 seconds
+        random_interval = random.uniform(0.5, 5.0)
+        time.sleep(random_interval)
 
     # Wait for any remaining messages to be delivered
     producer.flush()
 
 if __name__ == "__main__":
-    kafka_producer(data_dir + 'camilo.txt')
+    kafka_producer(data_dir + 'transactions.csv')
