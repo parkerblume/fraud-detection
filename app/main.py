@@ -80,6 +80,7 @@ async def predict(transaction: Transaction):
     transaction_dict = transaction.model_dump()
 
     probability = predict_fraud_probability(transaction_dict, X, model, scaler, user_details, usual_hour, hour_tolerance, usual_locations, amount_stats)
+
     is_fraud = 1 if probability > 0.4 else 0
 
     return {"fraud_probability": probability}
