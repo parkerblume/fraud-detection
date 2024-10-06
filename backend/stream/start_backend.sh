@@ -1,5 +1,18 @@
 #!/bin/bash
 
+# Set the path to your Kafka installation
+KAFKA_DIR="kafka_2.13-3.8.0"  # Replace this with your Kafka installation path
+
+kafka_2.13-3.8.0/bin/kafka-topics.sh --list --bootstrap-server localhost:9092 | grep -w transactions
+
+if [ $? -ne 0 ]; then
+  # Create the 'transactions' topic if it doesn't exist
+  kafka_2.13-3.8.0/bin/kafka-topics.sh --create --topic transactions --bootstrap-server localhost:9092 --partitions 1 --replication-factor 1
+  echo "Topic 'transactions' created."
+else
+  echo "Topic 'transactions' already exists."
+fi
+
 # Function to check if a port is in use
 check_and_kill_port() {
   local port=$1
@@ -22,9 +35,6 @@ check_and_kill_port 2181 "Zookeeper"
 
 # Check Kafka port (9092)
 check_and_kill_port 9092 "Kafka"
-
-# Set the path to your Kafka installation
-KAFKA_DIR="kafka_2.13-3.8.0"  # Replace this with your Kafka installation path
 
 # Function to start Zookeeper
 start_zookeeper() {
