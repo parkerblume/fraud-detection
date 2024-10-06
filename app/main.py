@@ -1,6 +1,9 @@
 import sys
 import os
 from pathlib import Path
+import requests
+import json
+
 
 # Add the project root to the Python path
 project_root = Path(__file__).resolve().parent.parent
@@ -41,6 +44,7 @@ usual_hour = None
 hour_tolerance = None
 usual_locations = None
 amount_stats = None
+transaction_counter = 1
 
 @app.get("/")
 async def root():
@@ -72,7 +76,7 @@ async def train_model_endpoint(file: UploadFile = File(None)):
 
 @app.post("/predict")
 async def predict(transaction: Transaction):
-    global model, scaler, usual_hour, hour_tolerance, usual_locations, amount_stats
+    global model, scaler, usual_hour, hour_tolerance, usual_locations, amount_stats, transaction_counter
     
     if model is None:
         raise HTTPException(status_code=400, detail="Model not trained. Please train the model first.")
@@ -82,6 +86,31 @@ async def predict(transaction: Transaction):
     probability = predict_fraud_probability(transaction_dict, X, model, scaler, user_details, usual_hour, hour_tolerance, usual_locations, amount_stats)
 
     is_fraud = 1 if probability > 0.4 else 0
+
+    transaction_data = {
+        "transactionId": transaction_counter,
+        "companyId": transaction.Name,
+        "sender": "0x22D50A97397A307952Ba2f54Ab5eAA7f6a993De2",
+        "receiver": "0x5Dc4F732052b3272e9a157B00C4A85C07E554340",
+        "isFraudulent": is_fraud,
+        "amount": transaction.Amount,
+        "timestamp": transaction.DateTime
+    }
+    json_data = json.dumps(transaction_data)
+
+    response = requests.post(
+        "http://localhost:3001/record-transaction",
+        data=json_data,
+        headers = {
+            "Content-Type": "application/json"
+        }
+    )
+
+    if response.status_code == 200:
+        print("It's public on the blockchain!")
+        print("Response:", response.json())
+
+    transaction_counter += 1
 
     return {"fraud_probability": probability}
 
