@@ -41,7 +41,6 @@ comps = [x.upper() for x in comps]
 
 # fuzzy check is subway in the list
 result = process.extractOne('subway', comps, scorer=fuzz.token_set_ratio, score_cutoff=20)
-comps
 
 df = pd.read_csv('data/transactions.csv')
 
