@@ -2,11 +2,11 @@ import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
-from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report, roc_auc_score
-import matplotlib.pyplot as plt
-from sklearn.model_selection import cross_val_score
+import importlib
+utils = importlib.import_module('utils.api')
+check_company_legitimacy = utils.check_company_legitimacy
 
 def process_data(data):
     # Extract the time features
@@ -30,6 +30,11 @@ def process_data(data):
     amount_stats['amount_std'] = amount_stats['amount_std'].replace(0, 1e-6)
     print(amount_stats)
 
+    # Check to see if company exists
+    data['Company_Exists'] = data['Name'].apply(check_company_legitimacy)
+    print(data['Company_Exists'])
+    data['Company_Exists'] = (data['Company_Exists'] == 'Yes').astype(int)
+
     # Now we create these new features from the data we scrapped
     data['Amt_To_Hour_Zscore'] = ((data['Amount'] - data['amount_mean']) / data['amount_std'])
     data['Amt_To_Hour_Zscore'] = data['Amt_To_Hour_Zscore'].clip(-1e6, 1e6)
@@ -44,7 +49,7 @@ def process_data(data):
 
     # Get our features for X
     X = pd.concat([data[['Amount', 'Hour', 'DayOfWeek', 'Amt_To_Hour_Zscore', 
-                         'Usual_Location', 'Unusual_Time', 'Out_of_bounds']], location_dummies], axis=1)
+                         'Usual_Location', 'Unusual_Time', 'Out_of_bounds', 'Company_Exists']], location_dummies], axis=1)
     y = data['Fraud']
 
     return X, y, usual_hour, hour_tolerance, usual_locs, amount_stats
@@ -73,6 +78,10 @@ def predict_fraud_probability(transaction, usual_hour, hour_tolerance, usual_loc
 
     out_of_bounds = 1 if (unusual_time and not usual_loc) else 0
 
+    # Check company exists
+    company_exists = check_company_legitimacy(transaction['Name'])
+    company_exists = 1 if company_exists == 'Yes' else 0
+
     features = pd.DataFrame({
         'Amount': [transaction['Amount']],
         'Hour': [transaction['Hour']],
@@ -81,6 +90,7 @@ def predict_fraud_probability(transaction, usual_hour, hour_tolerance, usual_loc
         'Usual_Location': [usual_loc],
         'Unusual_Time': [unusual_time],
         'Out_of_bounds': [out_of_bounds],
+        'Company_Exists': [company_exists]
     })
 
     for loc in usual_locations:
@@ -102,6 +112,9 @@ def predict_fraud_probability(transaction, usual_hour, hour_tolerance, usual_loc
 
     # Get the probability of this transaction
     fraud_probability = model.predict_proba(features_scaled)[0, 1]
+
+    if not company_exists:
+        fraud_probability = max(fraud_probability, 0.9)
     
     return fraud_probability
 
