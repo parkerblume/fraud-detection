@@ -38,6 +38,11 @@ async function readLedger() {
       console.log(`Transaction ID: ${transaction.id.toString()}`);
       console.log(`Data Hash: ${transaction.dataHash}`);
       console.log(`Is Fraudulent: ${transaction.isFraudulent}`);
+
+      // Decode companyId from bytes32 to string
+      const companyId = ethers.utils.parseBytes32String(transaction.companyId);
+      console.log(`Company ID: ${companyId}`);
+
       console.log('---------------------------------------');
     }
   } catch (error) {
