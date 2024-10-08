@@ -1,69 +1,78 @@
-# Knights BNY Fraud Detection Challenge
+# CreditShield - BNY Mellon Fraud Detection Challenge
 
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)  
-[![Issues](https://img.shields.io/github/issues/noway-code/CreditShield.svg)](https://github.com/parkerblume/fraud-detection/issues)  
-[![Forks](https://img.shields.io/github/forks/noway-code/CreditShield.svg)](https://github.com/parkerblume/fraud-detection/network)  
-[![Stars](https://img.shields.io/github/stars/noway-code/CreditShield.svg)](https://github.com/parkerblume/fraud-detection/stargazers)
+[![License](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
+[![Stars](https://img.shields.io/github/stars/noway-code/CreditShield.svg)](`https://github.com/parkerblume/fraud-detection/stargazers`)
 
-This project was created during the KnightHacks 7 Hackathon. BNY Mellon was a sponsor of this year's event and provided the hackathon a problem that we found very interesting and wanted to provide a creative solution, and this solution is explained below.
-
-## The Problem
-
-Financial fraud (e.g. identity theft, transaction fraud) is a persistent challenge. Develop an AI model that analyzes real-time transactions to detect suspicious activity. Use historical transaction data and patterns to build a machine learning model that flags anomalies.
-
-## Our Solution
-
-We implemented a Random Forest Classification Model to best find outlier's in a person's patterns of transactions.
-
-### Synthetic Date Generation
-
-Since bank statements are a hard dataset to come upon due to the sensitivity around it, we created a synthetic generation script to create the data used to the train our model. This data creates a typical pattern of a person's transactions (this pattern will be touched more on in the model section).
-
-### The Model
-
-The model we've decided is a Random Forest Classification Model, this seems to be best when trying to find outliers (or anomalies) in a data set and is better able to predict possible fraudulent purchases.
-
-Using the synthetic data, we trained the model to find the person's spending pattern with numerous feature inputs:
-* The city they frequently purchase items from
-* Their typical times of purchases
-* The amount of the purchase
-* Credit and Age (adds to the bias)
-
-We've also engineered a few features to give more importance on the pattern of these purchases:
-* The days of the week, to allow for flexibility where maybe the person spends more on saturdays then they do on tuesdays.
-* Unusual times for purchases
-* The amount spent within some hour given by Z-score.
-
-### The Frontend
-
-The frontend we kept simple as within our 2 hour time span of the competition we had to. The frontend is able to upload a bank statement in the form of a .csv which is then sent to the backend python server to train the model on the user's pattern of purchases.
-
-We then implement a simulation for real-time transactions, where the model provides a probability for each real-time transaction. When the frontend recieves the probability we then classify the transaction using the probability as either "Low Risk" (40-60%), "Medium Risk" (60%-80%), or "High Risk" (>80%).
+CreditShield was developed during the **KnightHacks 7 Hackathon** in response to a fraud detection challenge sponsored by **BNY Mellon**. This project leverages machine learning, real-time transaction analysis, and blockchain technology to detect and manage suspicious financial activities.
 
 ## Table of Contents
-- [Inspiration](#inspiration)
-- [Features](#features)
+- [Problem Statement](#problem-statement)
+- [Our Solution](#our-solution)
+  - [Synthetic Data Generation](#synthetic-data-generation)
+  - [The Model](#the-model)
+  - [The Frontend](#the-frontend)
 - [Installation](#installation)
-- [Usage](#usage)
+  - [Prerequisites](#prerequisites)
+  - [Setup](#setup)
 - [How We Built It](#how-we-built-it)
 - [Challenges We Faced](#challenges-we-faced)
 - [Accomplishments](#accomplishments)
 - [What We Learned](#what-we-learned)
 - [Future Plans](#future-plans)
 - [Built With](#built-with)
-- [Contributing](#contributing)
+- [Team](#team)
 - [License](#license)
-- [Try It Out](#try-it-out)
+
+## Problem Statement
+
+Financial fraud, including identity theft and transaction fraud, remains a persistent challenge in the banking sector. The goal is to develop an AI model that analyzes real-time transactions to detect suspicious activity. Utilizing historical transaction data and patterns, the objective is to build a machine learning model that flags anomalies effectively.
+
+## Our Solution
+
+**CreditShield** is a machine learning-powered fraud detection system that employs synthetic data and blockchain technology to ensure data integrity and scalability. It monitors real-time transactions in bank accounts, identifies potential fraudulent activities, and provides secure ledger management via blockchain. The system integrates a real-time data stream using Apache Kafka and leverages the Ethereum blockchain for secure and decentralized ledgering.
+
+### Synthetic Data Generation
+
+Due to the sensitive nature of bank statements, acquiring real datasets is challenging. To address this, we developed a synthetic data generation script that creates realistic transaction data for training our model. This synthetic data simulates typical transaction patterns of individuals by incorporating various features that influence spending behavior.
+
+### The Model
+
+We implemented a **Random Forest Classification Model** for its effectiveness in identifying outliers and anomalies within datasets, making it well-suited for predicting potential fraudulent purchases.
+
+Using the synthetic data, the model was trained to recognize individual spending patterns based on various features:
+
+- **Geographical Data**: Cities where frequent purchases occur.
+- **Temporal Patterns**: Typical times and days of transactions.
+- **Transaction Amount**: The amount involved in each purchase.
+- **Demographic Information**: Credit score and age (to introduce bias).
+
+Additional engineered features enhance the model’s ability to detect unusual patterns:
+
+- **Day of the Week**: Flexibility to account for higher spending on specific days (e.g., Saturdays vs. Tuesdays).
+- **Unusual Purchase Times**: Transactions occurring at atypical hours.
+- **Spending Amount Analysis**: Using Z-scores to evaluate the amount spent within specific hours.
+
+### The Frontend
+
+Given the two-hour time constraint of the hackathon, the frontend was designed to be simple yet functional. It allows users to upload a bank statement in `.csv` format, which is then sent to the backend Python server to train the model on the user's purchase patterns.
+
+Additionally, the frontend simulates real-time transactions, where the model assigns a probability to each transaction. Based on these probabilities, transactions are classified as:
+
+- **Low Risk**: 40-60%
+- **Medium Risk**: 60-80%
+- **High Risk**: >80%
 
 ## Installation
 
 ### Prerequisites
-- Python 3.8+
-- Node.js
-- Apache Kafka
-- MongoDB
-- Ethereum client (e.g., Geth or Infura)
-- Solidity compiler
+Ensure you have the following installed on your system:
+
+- **Python**: Version 3.8 or higher
+- **Node.js**: Latest LTS version recommended
+- **Apache Kafka**: For real-time data streaming
+- **MongoDB**: Database for storing transaction data
+- **Ethereum Client**: Ganache CLI for local blockchain deployment
+- **Solidity Compiler**: For smart contract deployment
 
 ### Setup
 
@@ -137,66 +146,72 @@ We then implement a simulation for real-time transactions, where the model provi
    npm run dev
    ```
 
-## Usage
+After completing the setup, follow these steps to use CreditShield:
 
-After completing the setup:
-1. Access the front-end at `http://localhost:5173/`.
-2. First train the model by uploading a CSV file with transaction data (use the `transactions.csv` file in the `data` directory).
-3. When the model is trained, you can start the real-time data stream by pasting in. You can copy the data from the `client/src/assets/real_time_transactions.csv`file.
-4. Verify the blockchain at anytime by running `cd fraud-detection-ethereum/backend` and `node readLedger.js`.
+1. **Access the Frontend**
+   Open your browser and navigate to [http://localhost:5173/](http://localhost:5173/).
+
+2. **Train the Model**
+   Upload a CSV file containing transaction data (use the provided `transactions.csv` file in the `data` directory).
+
+3. **Simulate Real-Time Transactions**
+   Start the real-time data stream by uploading data from `client/src/assets/real_time_transactions.csv`.
+
+4. **Verify the Blockchain**
+   At any time, verify the blockchain ledger by running:
+   ```bash
+   cd fraud-detection-ethereum/backend
+   node readLedger.js
+   ```
 
 ## How We Built It
 
-Our team divided the project into four main components:
-- **Machine Learning Model**: Developed using Python, Pandas, and Scikit-learn, trained on synthetic data generated for fraud detection.
+The project was divided into four main components:
+
+- **Machine Learning Model**: Developed using Python, Pandas, and Scikit-learn, trained on synthetic data for fraud detection.
 - **Blockchain Integrity**: Implemented Ethereum-based ledgering using Solidity smart contracts to ensure transaction integrity.
-- **Real-time Data Stream**: Leveraged Apache Kafka and Zookeeper for real-time transaction streaming.
+- **Real-Time Data Stream**: Leveraged Apache Kafka and Zookeeper for real-time transaction streaming.
 - **Frontend**: Built using React and TailwindCSS for a responsive and clean user interface.
 
 ## Challenges We Faced
 
-One of the major challenges was aligning the different parts of the project, especially since we didn't start with a fully defined plan. Early on, much of the work was done individually, and integrating these pieces was challenging but rewarding.
+One of the major challenges was integrating the different components of the project, especially without a fully defined initial plan. Much of the work was done individually, making the integration process both challenging and rewarding.
 
 ## Accomplishments
 
-- **Model Accuracy**: We successfully trained a machine learning model that provides accurate fraud predictions while avoiding overfitting.
-- **Synthetic Data Generation**: Created a complex system to generate realistic synthetic data for training the model.
+- **Model Accuracy**: Successfully trained a machine learning model that provides accurate fraud predictions while avoiding overfitting.
+- **Synthetic Data Generation**: Developed a system to generate realistic synthetic data for effective model training.
 - **Blockchain Ledger**: Deployed a secure and decentralized ledger using Ethereum smart contracts.
 
 ## What We Learned
 
-Key takeaways include:
-- The importance of clear planning and communication.
+Key takeaways from the project include:
+
+- The importance of clear planning and effective communication.
 - Hands-on experience with machine learning and synthetic data generation.
 - Introduction to real-time data processing using Apache Kafka.
-- Gained experience with blockchain and Solidity smart contract development.
+- Gained proficiency in blockchain technology and Solidity smart contract development.
 
 ## Future Plans
-We are proud of what we achieved during the development of CreditShield. While there are no immediate plans for further work, we’re excited to continue exploring the concepts and technologies we worked with, especially in future projects.
+
+We are proud of our achievements with CreditShield. While there are no immediate plans for further development, we are excited to continue exploring the concepts and technologies we worked with in future projects.
 
 ## Built With
 
 - **AI/ML**: Python, Pandas, Scikit-learn, NumPy
 - **Blockchain**: Ethereum, Solidity, Geth, Infura
-- **Real-time Streaming**: Apache Kafka, Zookeeper
+- **Real-Time Streaming**: Apache Kafka, Zookeeper
 - **Frontend**: React, TailwindCSS
-- **Backend**: Flask
+- **Backend**: FastAPI, Flask
 - **Database**: MongoDB
 
-## Contributing
+## Team
 
-We welcome contributions! Feel free to submit a pull request or open an issue to discuss any changes or improvements.
+- [Parker Blume](https://github.com/parkerblume/)
+- [Garrison Scarboro](https://github.com/gscarboro)
+- [Darren Bansil](https://github.com/libioco)
+- [Camilo Alvarez-Velez](https://github.com/noway-code)
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Try It Out
-
-Try out CreditShield for real-time fraud detection using machine learning and blockchain technology.
-
---- 
-**Note**: If you want to contribute or try out the code, check the repository and follow the [installation](#installation) instructions.    
-
-## To run server
-With the environment activated, run `uvicorn main:app --reload`
+This project is licensed under the **GPLv3 License** - see the [LICENSE](LICENSE) file for details.
