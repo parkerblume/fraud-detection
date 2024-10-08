@@ -134,17 +134,19 @@ async def train_model_endpoint(file: UploadFile = File(None)):
 @app.post("/predict")
 async def predict(transaction: Transaction):
     global model, scaler, usual_hour, hour_tolerance, usual_locations, amount_stats, transaction_counter
-    
+
     print(transaction)
 
     if model is None:
         raise HTTPException(status_code=400, detail="Model not trained. Please train the model first.")
-    
+
     transaction_dict = transaction.model_dump()
 
-    probability = predict_fraud_probability(transaction_dict, X, model, scaler, user_details, usual_hour, hour_tolerance, usual_locations, amount_stats)
+    probability = predict_fraud_probability(
+        transaction_dict, X, model, scaler, user_details,
+        usual_hour, hour_tolerance, usual_locations, amount_stats
+    )
 
-    is_fraud = True if probability > 0.4 else False
     is_fraud = 1 if probability > 0.57 else 0
 
     # Assign sender address based on company name
@@ -157,21 +159,13 @@ async def predict(transaction: Transaction):
     transaction_data = {
         "transactionId": transaction_counter,
         "companyId": transaction.Name,
-        "sender": sender,
-        "receiver": "0x0B8d325352A71368760C645F3B794FcD44A67934",
+        "senderAddress": sender,
+        "receiver": "0x008Ef933C66726e1e7ecBD060919147ee5Fc5844",
         "isFraudulent": is_fraud,
         "amount": transaction.Amount,
         "timestamp": transaction.DateTime
     }
     json_data = json.dumps(transaction_data)
-
-    response = requests.post(
-        "http://localhost:3001/record-transaction",
-        data=json_data,
-        headers = {
-            "Content-Type": "application/json"
-        }
-    )
 
     try:
         response = requests.post(
@@ -190,11 +184,15 @@ async def predict(transaction: Transaction):
         print("Response:", response.json())
     else:
         print(f"Failed to record transaction: {response.status_code} - {response.text}")
-        raise HTTPException(status_code=response.status_code, detail="Failed to record transaction on blockchain.")
+        raise HTTPException(
+            status_code=response.status_code,
+            detail="Failed to record transaction on blockchain."
+        )
 
     transaction_counter += 1
 
     return {"fraud_probability": probability}
+
 
 @app.get("/companies/{companyId}")
 async def get_company(companyId: str):

@@ -248,5 +248,5 @@ def generate_transactions(num_entries=100, weights=None):
 
 result = generate_transactions(num_entries=1000)
 
-output_file = 'transactions.csv'
+output_file = 'transactionsPredict.csv'
 result.to_csv(output_file, index=False)

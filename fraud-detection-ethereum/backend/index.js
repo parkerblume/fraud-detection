@@ -5,26 +5,39 @@ const cors = require('cors');
 const { ethers } = require('ethers');
 const fs = require('fs');
 const crypto = require('crypto');
-const { connectDB, transactionsCollection, companiesCollection } = require('./db');``
+const { connectDB, transactionsCollection, companiesCollection } = require('./db');
+const path = require('path');
+const stringify = require('json-stable-stringify');
+const { readLedger } = require("./readLedger");
 
+// Function to convert string to bytes32
+function stringToBytes32(str) {
+  if (ethers.utils.isAddress(str)) {
+    // If companyId is an Ethereum address, pad it to bytes32
+    return ethers.utils.hexZeroPad(str, 32);
+  } else {
+    // If companyId is a string, format it as bytes32
+    return ethers.utils.formatBytes32String(str);
+  }
+}
+
+// Environment variables
 const PRIVATE_KEY = process.env.PRIVATE_KEY;
 const NETWORK_URL = process.env.NETWORK_URL;
 const CONTRACT_ADDRESS = process.env.CONTRACT_ADDRESS;
 
-const path = require('path');
-const contractJson = JSON.parse(
-  fs.readFileSync(
-    path.resolve(__dirname, '../artifacts/contracts/SimpleFraudDetection.sol/SimpleFraudDetection.json'),
-    'utf8'
-  )
-);
-const contractAbi = contractJson.abi;
+// Load contract ABI
+const contractJsonPath = path.resolve(__dirname, '../artifacts/contracts/SimpleFraudDetection.sol/SimpleFraudDetection.json');
 
-function stringToBytes32(str) {
-  return ethers.utils.formatBytes32String(str);
+if (!fs.existsSync(contractJsonPath)) {
+  console.error(`Error: Contract ABI file not found at ${contractJsonPath}`);
+  process.exit(1);
 }
 
-// Connect to local network
+const contractJson = JSON.parse(fs.readFileSync(contractJsonPath, 'utf8'));
+const contractAbi = contractJson.abi;
+
+// Connect to Ethereum network
 const provider = new ethers.providers.JsonRpcProvider(NETWORK_URL);
 const wallet = new ethers.Wallet(PRIVATE_KEY, provider);
 
@@ -38,8 +51,6 @@ app.use(express.json());
 const PORT = 3001;
 
 // Function to hash transaction data
-const stringify = require('json-stable-stringify');
-
 function hashTransactionData(transactionData) {
     const dataString = stringify(transactionData);
     return crypto.createHash('sha256').update(dataString).digest('hex');
@@ -56,6 +67,8 @@ app.post('/record-transaction', async (req, res) => {
     // Add hash to transaction data
     transactionData.dataHash = dataHash;
 
+    const senderAddress = transactionData.senderAddress || wallet.address; // Use the address tied to the wallet
+
     // Save transaction data to MongoDB
     await transactionsCollection.insertOne(transactionData);
 
@@ -63,19 +76,14 @@ app.post('/record-transaction', async (req, res) => {
     const companyId = transactionData.companyId;
     const updateFields = {
       $inc: { totalTransactions: 1 },
-      $setOnInsert: {
-        companyId: companyId,
-      },
+      $setOnInsert: { companyId: companyId },
     };
 
     if (isFraudulent) {
       updateFields.$inc.fraudulentTransactions = 1;
     }
 
-    const options = {
-      returnDocument: 'after',
-      upsert: true,
-    };
+    const options = { returnDocument: 'after', upsert: true };
 
     const updatedCompany = await companiesCollection.findOneAndUpdate(
       { companyId: companyId },
@@ -104,7 +112,18 @@ app.post('/record-transaction', async (req, res) => {
     );
 
     // Convert companyId to bytes32
-    const companyIdBytes32 = stringToBytes32(companyId);
+    let companyIdBytes32;
+    if (ethers.utils.isAddress(companyId)) {
+      // If companyId is an Ethereum address
+      companyIdBytes32 = ethers.utils.hexZeroPad(companyId, 32);
+    } else {
+      // If companyId is a string
+      companyIdBytes32 = ethers.utils.formatBytes32String(companyId);
+    }
+
+    console.log('Data Hash:', `0x${dataHash}`);
+    console.log('Is Fraudulent:', isFraudulent);
+    console.log('Company ID (bytes32):', companyIdBytes32);
 
     // Record transaction on blockchain
     const tx = await contract.recordTransaction(`0x${dataHash}`, isFraudulent, companyIdBytes32);
@@ -128,27 +147,6 @@ app.get('/companies/:companyId', async (req, res) => {
     res.status(200).send({ success: true, company });
   } catch (error) {
     console.error('Error retrieving company profile:', error);
-    res.status(500).send({ success: false, error: error.message });
-  }
-});
-
-app.get('/get-transaction/:transactionId', async (req, res) => {
-  const { transactionId } = req.params;
-
-  try {
-    // Get transaction from smart contract
-    const transaction = await contract.transactions(transactionId);
-
-    // Format the data
-    const transactionData = {
-      id: transaction.id.toString(),
-      dataHash: transaction.dataHash,
-      isFraudulent: transaction.isFraudulent,
-    };
-
-    res.status(200).send({ success: true, transaction: transactionData });
-  } catch (error) {
-    console.error('Error retrieving transaction:', error);
     res.status(500).send({ success: false, error: error.message });
   }
 });
@@ -198,6 +196,16 @@ app.get('/get-all-transactions', async (req, res) => {
   }
 });
 
+// Return ledger
+app.get('/ledger', async (req, res) => {
+  try {
+    const ledger = await readLedger();
+    res.status(200).send({ success: true, ledger });
+  } catch (error) {
+    console.error('Error retrieving ledger:', error);
+    res.status(500).send({ success: false, error: error.message });
+  }
+});
 
 connectDB();
 

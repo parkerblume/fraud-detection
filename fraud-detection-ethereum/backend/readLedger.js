@@ -1,5 +1,4 @@
 // readLedger.js
-
 require('dotenv').config();
 const { ethers } = require('ethers');
 const fs = require('fs');
@@ -70,31 +69,52 @@ async function readLedger() {
   try {
     const transactionCount = await contract.transactionCount();
     const count = transactionCount.toNumber();
+    const ledger = [];
 
     console.log(`Total Transactions: ${count}\n`);
+
+    const seenTransactionIds = new Set(); // Track unique transaction IDs
 
     for (let i = 1; i <= count; i++) {
       const transaction = await contract.transactions(i);
 
       const transactionId = transaction.id.toString();
-      const dataHash = transaction.dataHash;
-      const isFraudulent = transaction.isFraudulent;
-      const companyIdBytes32 = transaction.companyId;
-      const companyId = decodeBytes32(companyIdBytes32);
 
-      // Fetch sender address from the mapping
-      const senderAddress = companyAddressMap[companyId] || 'N/A';
+      // Only add the transaction if it hasn't been added already
+      if (!seenTransactionIds.has(transactionId)) {
+        const dataHash = transaction.dataHash;
+        const isFraudulent = transaction.isFraudulent;
+        const companyIdBytes32 = transaction.companyId;
+        const companyId = decodeBytes32(companyIdBytes32);
 
-      console.log(`Transaction ID: ${transactionId}`);
-      console.log(`Data Hash: ${dataHash}`);
-      console.log(`Is Fraudulent: ${isFraudulent}`);
-      console.log(`Company ID: ${companyId}`);
-      console.log(`Sender Address: ${senderAddress}`);
-      console.log('---------------------------------------');
+        // Fetch sender address from the mapping
+        const senderAddress = companyAddressMap[companyId] || 'N/A';
+
+        const transactionData = {
+          transactionId,
+          dataHash,
+          isFraudulent,
+          companyId,
+          senderAddress
+        };
+
+        ledger.push(transactionData);
+        seenTransactionIds.add(transactionId); // Mark this transaction as seen
+
+        console.log(`Transaction ID: ${transactionId}`);
+        console.log(`Data Hash: ${dataHash}`);
+        console.log(`Is Fraudulent: ${isFraudulent}`);
+        console.log(`Company ID: ${companyId}`);
+        console.log(`Sender Address: ${senderAddress}`);
+        console.log('---------------------------------------');
+      }
     }
+    console.log('Ledger:', ledger);
+    return ledger; // Return ledger data
   } catch (error) {
     console.error('Error reading ledger:', error);
+    throw new Error('Error reading ledger');
   }
 }
 
-readLedger();
+module.exports = { readLedger };

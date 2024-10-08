@@ -1,4 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
+// App.jsx
+import React, { useState, useRef } from 'react';
 import { Upload, Play, AlertTriangle, Loader, StopCircle } from 'lucide-react';
 import Papa from 'papaparse';
 
@@ -27,6 +28,32 @@ const FraudDetectionDashboard = () => {
   const [simulationStatus, setSimulationStatus] = useState('');
   const trainFileInputRef = useRef(null);
   const isSimulatingRef = useRef(false);
+  const [ledger, setLedger] = useState([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const fetchLedger = async () => {
+    try {
+      setLedger([]);  // Clear the ledger before fetching new data
+      const response = await fetch('http://localhost:3001/ledger');
+      const data = await response.json();
+      if (data.success) {
+        // Ensure no duplicate entries before setting the ledger
+        const uniqueLedger = data.ledger.filter((entry, index, self) =>
+          index === self.findIndex((t) => t.transactionId === entry.transactionId)
+        );
+        setLedger(uniqueLedger);
+        setIsModalOpen(true);
+      } else {
+        console.error('Failed to fetch ledger');
+      }
+    } catch (error) {
+      console.error('Error fetching ledger:', error);
+    }
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+  };
 
   const handleTrainFileUpload = async (event) => {
     const file = event.target.files[0];
@@ -150,6 +177,7 @@ const FraudDetectionDashboard = () => {
 
   return (
     <div className="p-4">
+      {/* Training and Simulation Controls */}
       <div className="mb-4 flex space-x-4">
         <button
           onClick={() => trainFileInputRef.current.click()}
@@ -158,7 +186,7 @@ const FraudDetectionDashboard = () => {
             isTraining && 'opacity-50 cursor-not-allowed'
           }`}
         >
-          {isTraining ? <Loader className="mr-2 animate-spin" size={20} /> : <Upload className="mr-2" size={20} />}
+          {isTraining ? <Loader className="mr-2 animate-spin" size={20}/> : <Upload className="mr-2" size={20}/>}
           {isTraining ? 'Training...' : 'Upload Train CSV'}
         </button>
         <input
@@ -175,7 +203,7 @@ const FraudDetectionDashboard = () => {
             (isSimulating || simulationData.length === 0 || isTraining) && 'opacity-50 cursor-not-allowed'
           }`}
         >
-          <Play className="mr-2" size={20} />
+          <Play className="mr-2" size={20}/>
           {isSimulating ? 'Simulating...' : 'Start Simulation'}
         </button>
         <button
@@ -185,10 +213,12 @@ const FraudDetectionDashboard = () => {
             !isSimulating && 'opacity-50 cursor-not-allowed'
           }`}
         >
-          <StopCircle className="mr-2" size={20} />
+          <StopCircle className="mr-2" size={20}/>
           Stop Simulation
         </button>
       </div>
+
+      {/* Training Alerts */}
       {isTraining && (
         <Alert>
           Please wait while your model learns from your data...
@@ -199,6 +229,8 @@ const FraudDetectionDashboard = () => {
           {trainingMessage}
         </Alert>
       )}
+
+      {/* CSV Input */}
       <div className="mt-4">
         <h3 className="text-lg font-semibold mb-2">Input CSV Data</h3>
         <textarea
@@ -214,11 +246,15 @@ const FraudDetectionDashboard = () => {
           Parse CSV Input
         </button>
       </div>
+
+      {/* Simulation Status Alert */}
       {simulationStatus && (
         <Alert type="info">
           {simulationStatus}
         </Alert>
       )}
+
+      {/* Transactions Table */}
       <div className="border rounded-lg overflow-hidden mt-4">
         <div className="max-h-96 overflow-y-auto text-black">
           <table className="w-full">
@@ -249,11 +285,12 @@ const FraudDetectionDashboard = () => {
                         <>
                           {severity !== 'none' && (
                             <div className="absolute top-1/2 right-2 transform -translate-y-1/2">
-                              <AlertTriangle 
-                                size={20} 
+                              <AlertTriangle
+                                size={20}
                                 className={`${severityIconColor[severity]}`}
                               />
-                              <div className="invisible group-hover:visible absolute z-10 w-48 text-sm bg-gray-800 text-white rounded p-2 right-0 bottom-full mb-2">
+                              <div
+                                className="invisible group-hover:visible absolute z-10 w-48 text-sm bg-gray-800 text-white rounded p-2 right-0 bottom-full mb-2">
                                 Fraud Severity: {severity.charAt(0).toUpperCase() + severity.slice(1)}
                               </div>
                             </div>
@@ -270,6 +307,49 @@ const FraudDetectionDashboard = () => {
           </table>
         </div>
       </div>
+
+      {/* Ledger Modal */}
+      <div className="p-4">
+        <button onClick={fetchLedger} className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+          Show Ledger
+        </button>
+
+        {isModalOpen && (
+          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center text-black">
+            <div className="bg-white p-6 rounded-lg shadow-lg">
+              <h2 className="text-lg font-semibold mb-4">Ledger</h2>
+              <div className="max-h-96 overflow-y-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr>
+                      <th className="border-b px-4 py-2">Transaction ID</th>
+                      <th className="border-b px-4 py-2">Data Hash</th>
+                      <th className="border-b px-4 py-2">Is Fraudulent</th>
+                      <th className="border-b px-4 py-2">Company ID</th>
+                      <th className="border-b px-4 py-2">Sender Address</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {ledger.map((transaction, index) => (
+                      <tr key={index}>
+                        <td className="border-b px-4 py-2">{transaction.transactionId}</td>
+                        <td className="border-b px-4 py-2">{transaction.dataHash}</td>
+                        <td className="border-b px-4 py-2">{transaction.isFraudulent ? 'Yes' : 'No'}</td>
+                        <td className="border-b px-4 py-2">{transaction.companyId}</td>
+                        <td className="border-b px-4 py-2">{transaction.senderAddress}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <button onClick={closeModal} className="mt-4 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600">
+                Close
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
     </div>
   );
 };

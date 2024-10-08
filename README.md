@@ -122,8 +122,9 @@ Ensure you have the following installed on your system:
    - Find ganache-cli, choose any of the private keys and add it to the `.env` for <private_key>.
 5. In a new terminal compile and deploy the smart contract:
    ```bash
+   cd fraud-detection-ethereum/
    npx hardhat compile
-   npx hardhat run ../scripts/deploy.js --network localhost
+   npx hardhat run scripts/deploy.js --network localhost
    ```
     Copy the string in the terminal and add it to the `.env` for <CONTRACT_ADDRESS>.
    ```bash
@@ -132,7 +133,7 @@ Ensure you have the following installed on your system:
    ```
 6. In a new terminal run: ``node fraud-detection-ethereum/scripts/fetch_addresses.js``
 
-7. Run the backend services:
+7. Run the backend services in your python environment:
    ```bash
    cd app
    uvicorn main:app --reload
