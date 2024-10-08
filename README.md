@@ -1,9 +1,8 @@
 # CreditShield - BNY Mellon Fraud Detection Challenge
 
-[![License](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
-[![Stars](https://img.shields.io/github/stars/noway-code/CreditShield.svg)](`https://github.com/parkerblume/fraud-detection/stargazers`)
-
 CreditShield was developed during the **KnightHacks 7 Hackathon** in response to a fraud detection challenge sponsored by **BNY Mellon**. This project leverages machine learning, real-time transaction analysis, and blockchain technology to detect and manage suspicious financial activities.
+
+## 🏆 Awarded **1st place for BNY Mellon challenge**. 🏆
 
 ## Table of Contents
 - [Problem Statement](#problem-statement)
