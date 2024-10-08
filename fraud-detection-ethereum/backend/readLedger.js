@@ -33,7 +33,7 @@ const provider = new ethers.providers.JsonRpcProvider(NETWORK_URL);
 const contract = new ethers.Contract(CONTRACT_ADDRESS, contractAbi, provider);
 
 // Load company-address mapping
-const companyAddressMapFile = path.resolve(__dirname, '../../company_address_map.json');
+const companyAddressMapFile = path.resolve(__dirname, '../../app/company_address_map.json');
 let companyAddressMap = {};
 
 // Function to load company-address mappings

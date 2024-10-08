@@ -53,7 +53,7 @@ company_address_map_file = 'company_address_map.json'
 company_address_map = {}
 
 # Load Ethereum addresses from ethereum_addresses.txt
-ethereum_addresses_file = 'ethereum_addresses.txt'
+ethereum_addresses_file = '../ethereum_addresses.txt'
 ethereum_addresses = []
 
 # Pointer to the next available Ethereum address

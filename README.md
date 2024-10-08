@@ -53,18 +53,25 @@ BNY's challenge caught our attention because of the rising importance of technol
 
 2. Install the Python and Node.js dependencies:
    ```bash
-   pip install -r backend/requirements.txt
-   cd frontend
-   npm install
+   python -m venv myenv
+   ```
+   Run:
+
+    On Windows: `myenv\Scripts\Activate`
+
+    On Linux: `source myenv/bin/activate`
+    ```bash
+   pip install -r requirements.txt
    ```
    
 3. Start the Ethereum client:
    ```bash
    cd fraud-detection-etehereum
    npm install
-    ganache-cli --gasPrice 0 --defaultBalanceEther 1000000 --accounts 1000
-4. In a new terminal run: ``node fraud-detection-ethereum/scripts/fetch_addresses.js``
-5. Run the backend and frontend services:
+   npm install -g ganache-cli
+   ganache-cli --gasPrice 0 --defaultBalanceEther 1000000 --accounts 1000
+
+4. Run the backend and frontend services:
 
     In a new terminal:
    ```bash
@@ -83,16 +90,19 @@ BNY's challenge caught our attention because of the rising importance of technol
    ```
    - MongoDB: Go to the MongoDB Atlas website and create a new cluster. Add your IP to the database connections. Get the mongo connection string with username and password add it to the `.env` for <MONGO_URI>.
    - Find ganache-cli, choose any of the private keys and add it to the `.env` for <private_key>.
-6. In a new terminal compile and deploy the smart contract:
+5. In a new terminal compile and deploy the smart contract:
    ```bash
    npx hardhat compile
    npx hardhat run ../scripts/deploy.js --network localhost
    ```
     Copy the string in the terminal and add it to the `.env` for <CONTRACT_ADDRESS>.
    ```bash
+   cd backend
    node index.js
    ```
-7. In a new terminal, run the backend services:
+6. In a new terminal run: ``node fraud-detection-ethereum/scripts/fetch_addresses.js``
+
+7. Run the backend services:
    ```bash
    cd app
    uvicorn main:app --reload
@@ -101,16 +111,17 @@ BNY's challenge caught our attention because of the rising importance of technol
 8. In a new terminal, start the frontend:
    ```bash
    cd client
+   npm install
    npm run dev
    ```
 
 ## Usage
 
 After completing the setup:
-1. Access the front-end at `http://localhost:3000`.
+1. Access the front-end at `http://localhost:5173/`.
 2. First train the model by uploading a CSV file with transaction data (use the `transactions.csv` file in the `data` directory).
-3. When the model is trained, you can start the real-time data stream by pasting in
-4. Check the blockchain ledger for a secure transaction history by running `node fraud-detection-ethereum/backend/readLedger.js`.
+3. When the model is trained, you can start the real-time data stream by pasting in. You can copy the data from the `client/src/assets/real_time_transactions.csv`file.
+4. Verify the blockchain at anytime by running `cd fraud-detection-ethereum/backend` and `node readLedger.js`.
 
 ## How We Built It
 
