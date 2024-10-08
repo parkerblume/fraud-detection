@@ -16,14 +16,14 @@ from pydantic import BaseModel
 import pandas as pd
 import joblib
 from app.models.fraud_model import process_data, train_model, predict_fraud_probability
-
+import os
 from web3 import Web3
 
 app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Adjust this in production for security
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -109,7 +109,7 @@ async def root():
 @app.post("/train")
 async def train_model_endpoint(file: UploadFile = File(None)):
     global model, X, user_details, scaler, usual_hour, hour_tolerance, usual_locations, amount_stats
-
+    
     if file:
         file_location = f"data/{file.filename}"
         os.makedirs(os.path.dirname(file_location), exist_ok=True)
@@ -134,16 +134,17 @@ async def train_model_endpoint(file: UploadFile = File(None)):
 @app.post("/predict")
 async def predict(transaction: Transaction):
     global model, scaler, usual_hour, hour_tolerance, usual_locations, amount_stats, transaction_counter
-
+    
     print(transaction)
 
     if model is None:
         raise HTTPException(status_code=400, detail="Model not trained. Please train the model first.")
-
+    
     transaction_dict = transaction.model_dump()
 
     probability = predict_fraud_probability(transaction_dict, X, model, scaler, user_details, usual_hour, hour_tolerance, usual_locations, amount_stats)
 
+    is_fraud = True if probability > 0.4 else False
     is_fraud = 1 if probability > 0.57 else 0
 
     # Assign sender address based on company name
@@ -163,6 +164,14 @@ async def predict(transaction: Transaction):
         "timestamp": transaction.DateTime
     }
     json_data = json.dumps(transaction_data)
+
+    response = requests.post(
+        "http://localhost:3001/record-transaction",
+        data=json_data,
+        headers = {
+            "Content-Type": "application/json"
+        }
+    )
 
     try:
         response = requests.post(
