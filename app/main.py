@@ -87,13 +87,13 @@ async def predict(transaction: Transaction):
 
     probability = predict_fraud_probability(transaction_dict, X, model, scaler, user_details, usual_hour, hour_tolerance, usual_locations, amount_stats)
 
-    is_fraud = 1 if probability > 0.4 else 0
+    is_fraud = True if probability > 0.4 else False
 
     transaction_data = {
         "transactionId": transaction_counter,
         "companyId": transaction.Name,
-        "sender": "0x22D50A97397A307952Ba2f54Ab5eAA7f6a993De2",
-        "receiver": "0x5Dc4F732052b3272e9a157B00C4A85C07E554340",
+        "sender": "0x8b6862dEc36a03382f1a6415007C9C3FF0A290FF",
+        "receiver": "0xb478911AAf3dc0f025eEDf44BD3de42453131019",
         "isFraudulent": is_fraud,
         "amount": transaction.Amount,
         "timestamp": transaction.DateTime
@@ -107,7 +107,7 @@ async def predict(transaction: Transaction):
             "Content-Type": "application/json"
         }
     )
-     
+
     if response.status_code == 200:
         print("It's public on the blockchain!")
         print("Response:", response.json())

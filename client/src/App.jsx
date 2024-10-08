@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Upload, Play, AlertTriangle, Loader } from 'lucide-react';
+import { Upload, Play, AlertTriangle, Loader, StopCircle } from 'lucide-react';
 import Papa from 'papaparse';
 
 const Alert = ({ children, type = 'info' }) => {
@@ -24,7 +24,9 @@ const FraudDetectionDashboard = () => {
   const [isTraining, setIsTraining] = useState(false);
   const [trainingMessage, setTrainingMessage] = useState('');
   const [csvInput, setCsvInput] = useState('');
+  const [simulationStatus, setSimulationStatus] = useState('');
   const trainFileInputRef = useRef(null);
+  const isSimulatingRef = useRef(false);
 
   const handleTrainFileUpload = async (event) => {
     const file = event.target.files[0];
@@ -58,19 +60,28 @@ const FraudDetectionDashboard = () => {
     const { data } = Papa.parse(csvInput, { header: true, skipEmptyLines: true });
     setSimulationData(data);
     console.log('Parsed simulation data:', data);
+    setSimulationStatus(`Parsed ${data.length} transactions`);
   };
 
   const simulateTransactions = async () => {
+    console.log('Starting simulation...');
     if (simulationData.length === 0) {
       alert('Simulation data is not available. Please input CSV data and parse it first.');
       return;
     }
     setIsSimulating(true);
+    isSimulatingRef.current = true;
     setTransactions([]);
+    setSimulationStatus('Simulation in progress...');
+    console.log(`Simulation data length: ${simulationData.length}`);
   
-    for (const row of simulationData) {
-      if (!isSimulating) break;
+    for (let i = 0; i < simulationData.length; i++) {
+      if (!isSimulatingRef.current) {
+        console.log('Simulation stopped.');
+        break;
+      }
       
+      const row = simulationData[i];
       const dateTime = `${row.Date} ${row.Time}`;
       const transaction = {
         DateTime: dateTime,
@@ -81,6 +92,7 @@ const FraudDetectionDashboard = () => {
         Balance: parseFloat(row.Balance),
       };
       
+      console.log(`Processing transaction ${i + 1}/${simulationData.length}:`, transaction);
       setTransactions(prev => [...prev, { ...transaction, status: 'pending' }]);
       
       try {
@@ -90,6 +102,7 @@ const FraudDetectionDashboard = () => {
           body: JSON.stringify(transaction),
         });
         const { fraud_probability } = await response.json();
+        console.log(`Fraud probability for transaction ${i + 1}: ${fraud_probability}`);
         setTransactions(prev => 
           prev.map((t, index) => 
             index === prev.length - 1 ? { ...t, fraud_probability, status: 'complete' } : t
@@ -99,20 +112,26 @@ const FraudDetectionDashboard = () => {
         console.error('Error predicting fraud:', error);
       }
       
+      setSimulationStatus(`Processed ${i + 1}/${simulationData.length} transactions`);
       await new Promise(resolve => setTimeout(resolve, 1000)); // 1 second delay
     }
     
     setIsSimulating(false);
+    isSimulatingRef.current = false;
+    setSimulationStatus('Simulation completed');
+    console.log('Simulation finished.');
   };
 
   const stopSimulation = () => {
+    console.log('Stopping simulation...');
     setIsSimulating(false);
+    isSimulatingRef.current = false;
   };
 
   const getFraudSeverity = (probability) => {
     if (probability > 0.8) return 'high';
     if (probability > 0.6) return 'medium';
-    if (probability > 0.4) return 'low';
+    if (probability > 0.5) return 'low';
     return 'none';
   };
 
@@ -166,6 +185,7 @@ const FraudDetectionDashboard = () => {
             !isSimulating && 'opacity-50 cursor-not-allowed'
           }`}
         >
+          <StopCircle className="mr-2" size={20} />
           Stop Simulation
         </button>
       </div>
@@ -194,8 +214,13 @@ const FraudDetectionDashboard = () => {
           Parse CSV Input
         </button>
       </div>
+      {simulationStatus && (
+        <Alert type="info">
+          {simulationStatus}
+        </Alert>
+      )}
       <div className="border rounded-lg overflow-hidden mt-4">
-        <div className="max-h-96 overflow-y-auto">
+        <div className="max-h-96 overflow-y-auto text-black">
           <table className="w-full">
             <thead className="bg-gray-100">
               <tr>
@@ -205,7 +230,7 @@ const FraudDetectionDashboard = () => {
                 <th className="px-4 py-2 text-left">Location</th>
                 <th className="px-4 py-2 text-left">Zip</th>
                 <th className="px-4 py-2 text-left">Balance</th>
-                <th className="px-4 py-2 text-left">Fraud Probability</th>
+                <th className="px-8 py-2 text-left">Alert</th>
               </tr>
             </thead>
             <tbody>
@@ -222,7 +247,6 @@ const FraudDetectionDashboard = () => {
                     <td className="px-4 py-2 relative group">
                       {transaction.status === 'complete' ? (
                         <>
-                          {transaction.fraud_probability.toFixed(4)}
                           {severity !== 'none' && (
                             <div className="absolute top-1/2 right-2 transform -translate-y-1/2">
                               <AlertTriangle 

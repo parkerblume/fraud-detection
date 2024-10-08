@@ -87,6 +87,7 @@ def predict_fraud_probability(transaction, X, model, scaler, user_details, usual
     Amt_To_Hour_Zscore = (transaction['Amount'] - mean_amt) / std_amt
     Amt_To_Hour_Zscore = np.clip(Amt_To_Hour_Zscore, -1e6, 1e6)
 
+    # If out of their usual time, or out of their usual locations of transactions
     out_of_bounds = 1 if (unusual_time and not usual_loc) else 0
 
     # Check company exists
@@ -117,12 +118,6 @@ def predict_fraud_probability(transaction, X, model, scaler, user_details, usual
 
     features_scaled = scaler.transform(features)
 
-    # Debug prints
-    print("Features for prediction:")
-    print(features)
-    print("Scaled features for prediction:")
-    print(features_scaled)
-
     # Get the probability of this transaction
     fraud_probability = model.predict_proba(features_scaled)[0, 1]
 
@@ -135,25 +130,25 @@ def predict_fraud_probability(transaction, X, model, scaler, user_details, usual
     return fraud_probability
 
 def train_model(X, y):
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
     # Scale our sets
     scaler = StandardScaler()
     X_train_scaled = scaler.fit_transform(X_train)
     X_test_scaled = scaler.transform(X_test)
 
-    smote = SMOTE(random_state=42)
-    X_train_resampled, y_train_resampled = smote.fit_resample(X_train_scaled, y_train)
+    # smote = SMOTE(random_state=42)
+    # X_train_resampled, y_train_resampled = smote.fit_resample(X_train_scaled, y_train)
 
     # Print class distribution before and after SMOTE
-    print("Class distribution before SMOTE:")
-    print(pd.Series(y_train).value_counts(normalize=True))
-    print("\nClass distribution after SMOTE:")
-    print(pd.Series(y_train_resampled).value_counts(normalize=True))
+    # print("Class distribution before SMOTE:")
+    # print(pd.Series(y_train).value_counts(normalize=True))
+    # print("\nClass distribution after SMOTE:")
+    # print(pd.Series(y_train_resampled).value_counts(normalize=True))
 
     # Fit the model to the data, n_estimators is the number of trees, making a class prediction independenlty
     model = RandomForestClassifier(n_estimators=100, min_samples_leaf=5, max_depth=5, class_weight="balanced_subsample", random_state=42)
-    model.fit(X_train_resampled, y_train_resampled)
+    model.fit(X_train_scaled, y_train)
 
     return model, scaler, X_test_scaled, y_test
 
@@ -168,6 +163,7 @@ def test_model(model, X_test_scaled, y_test, feature_names):
     roc_auc = roc_auc_score(y_test, y_pred_proba)
     print(f"ROC AUC Score: {roc_auc:.4f}")
 
+    # To see what features are more important over others
     feature_importances = pd.DataFrame({
         'feature': feature_names,
         'importance': model.feature_importances_
@@ -205,73 +201,11 @@ def adjust_prob_by_risks(probability, credit_risk, age_risk):
     credit_risk = calc_cred_risk(credit_risk)
     age_risk = calculate_age_risk(age_risk)
     
-    # Combine risks, giving slightly more weight to credit score
+    # Putting a bit more weight on credit risk
     combined_risk = (credit_risk * 0.6) + (age_risk * 0.4)
     
-    # Adjust probability
+    # Add the bias to the probability
     adjusted_probability = probability + (combined_risk * 0.1)
     
-    # Ensure probability stays within [0, 1]
+    # 0-100% probability
     return max(0, min(1, adjusted_probability))
-
-# Read in our data, and process it
-# data = pd.read_csv('transactions_credit.csv')
-# X, y, usual_hour, hour_tolerance, usual_locations, amount_stats = process_data(data, user_details)
-# model, scaler, X_test_scaled, y_test = train_model(X, y)
-
-# Test Model
-# y_pred, y_pred_proba, roc_auc, feature_importances = test_model(model, X_test_scaled, y_test, X.columns)
-
-
-# y_pred = model.predict(X_test_scaled)
-# y_pred_proba = model.predict_proba(X_test_scaled)[:, 1]
-
-# print("\nClassification Report:")
-# print(classification_report(y_test, y_pred))
-# print(f"ROC AUC Score: {roc_auc_score(y_test, y_pred_proba):.4f}")
-# 
-# # Print feature importances
-# feature_importances = pd.DataFrame({'feature': X.columns, 'importance': model.feature_importances_})
-# feature_importances = feature_importances.sort_values('importance', ascending=False)
-# print("\nTop 10 Most Important Features:")
-# print(feature_importances.head(20))
-
-# test_transaction = {
-#     'DateTime': '2024-7-12 22:30:00',
-#     'Name': 'Wawa',
-#     'Amount': 12,
-#     'Location': 'Atlanta GA'
-# }
-# 
-# test_transaction2 = {
-#     'DateTime': '2024-7-12 18:30:00',
-#     'Name': 'ChairMan',
-#     'Amount': 200,
-#     'Location': 'Orlando FL'
-# }
-# 
-# test_transaction3 = {
-#     'DateTime': '2024-7-12 04:30:00',
-#     'Name': 'Lexus',
-#     'Amount': 1000000,
-#     'Location': 'Orlando FL'
-# }
-# 
-# test_transaction4 = {
-#     'DateTime': '2024-7-12 16:30:00',
-#     'Name': 'Wawa',
-#     'Amount': 40,
-#     'Location': 'Orlando FL'
-# }
-# 
-# fraud_prob = predict_fraud_probability(test_transaction, user_details, usual_hour, hour_tolerance, usual_locations, amount_stats)
-# print(f"Probability of fraud for the new transaction: {fraud_prob:.4f}\n")
-# 
-# fraud_prob = predict_fraud_probability(test_transaction2, user_details, usual_hour, hour_tolerance, usual_locations, amount_stats)
-# print(f"Probability of fraud for the new transaction: {fraud_prob:.4f} \n")
-# 
-# fraud_prob = predict_fraud_probability(test_transaction3, user_details, usual_hour, hour_tolerance, usual_locations, amount_stats)
-# print(f"Probability of fraud for the new transaction: {fraud_prob:.4f}\n")
-# 
-# fraud_prob = predict_fraud_probability(test_transaction4, user_details, usual_hour, hour_tolerance, usual_locations, amount_stats)
-# print(f"Probability of fraud for the new transaction: {fraud_prob:.4f}\n")
