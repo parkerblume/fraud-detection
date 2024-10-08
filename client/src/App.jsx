@@ -74,13 +74,13 @@ const FraudDetectionDashboard = () => {
     setTransactions([]);
     setSimulationStatus('Simulation in progress...');
     console.log(`Simulation data length: ${simulationData.length}`);
-  
+
     for (let i = 0; i < simulationData.length; i++) {
       if (!isSimulatingRef.current) {
         console.log('Simulation stopped.');
         break;
       }
-      
+
       const row = simulationData[i];
       const dateTime = `${row.Date} ${row.Time}`;
       const transaction = {
@@ -91,10 +91,10 @@ const FraudDetectionDashboard = () => {
         Zip: row.Zip,
         Balance: parseFloat(row.Balance),
       };
-      
+
       console.log(`Processing transaction ${i + 1}/${simulationData.length}:`, transaction);
       setTransactions(prev => [...prev, { ...transaction, status: 'pending' }]);
-      
+
       try {
         const response = await fetch('http://127.0.0.1:8000/predict', {
           method: 'POST',
@@ -103,19 +103,19 @@ const FraudDetectionDashboard = () => {
         });
         const { fraud_probability } = await response.json();
         console.log(`Fraud probability for transaction ${i + 1}: ${fraud_probability}`);
-        setTransactions(prev => 
-          prev.map((t, index) => 
+        setTransactions(prev =>
+          prev.map((t, index) =>
             index === prev.length - 1 ? { ...t, fraud_probability, status: 'complete' } : t
           )
         );
       } catch (error) {
         console.error('Error predicting fraud:', error);
       }
-      
+
       setSimulationStatus(`Processed ${i + 1}/${simulationData.length} transactions`);
       await new Promise(resolve => setTimeout(resolve, 1000)); // 1 second delay
     }
-    
+
     setIsSimulating(false);
     isSimulatingRef.current = false;
     setSimulationStatus('Simulation completed');
