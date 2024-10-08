@@ -8,7 +8,7 @@ Financial fraud (e.g. identity theft, transaction fraud) is a persistent challen
 
 ## Our Solution
 
-We implemented a Random Classification Forest Model to best find outlier's in a person's patterns of transactions.
+We implemented a Random Forest Classification Model to best find outlier's in a person's patterns of transactions.
 
 ### Synthetic Date Generation
 
@@ -16,7 +16,7 @@ Since bank statements are a hard dataset to come upon due to the sensitivity aro
 
 ### The Model
 
-The model we've decided is a Random Classification Forest Model, this seems to be best when trying to find outliers (or anomalies) in a data set and is better able to predict possible fraudulent purchases.
+The model we've decided is a Random Forest Classification Model, this seems to be best when trying to find outliers (or anomalies) in a data set and is better able to predict possible fraudulent purchases.
 
 Using the synthetic data, we trained the model to find the person's spending pattern with numerous feature inputs:
 * The city they frequently purchase items from
